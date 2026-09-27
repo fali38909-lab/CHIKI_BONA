@@ -32,6 +32,9 @@ jobs:
       - name: Restore project dependencies
         run: cp /tmp/chiki_bona_pubspec.yaml pubspec.yaml
 
+      - name: Remove default Flutter test
+        run: rm -rf test
+
       - name: Enable HTTP API access for the VPS
         run: |
           python3 - <<'PY'
