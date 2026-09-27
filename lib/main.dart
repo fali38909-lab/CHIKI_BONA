@@ -94,8 +94,8 @@ class VideoItem {
 }
 
 class ChikiApi {
-  String baseUrl;
-  ChikiApi(this.baseUrl) : baseUrl = _clean(baseUrl);
+  final String baseUrl;
+  ChikiApi(String baseUrl) : baseUrl = _clean(baseUrl);
 
   static String _clean(String value) => value.trim().replaceFirst(RegExp(r'/*$'), '');
 
@@ -364,7 +364,72 @@ class _ChikiBonaHomeState extends State<ChikiBonaHome> {
 
   Widget _sectionTitle(String badge, String title) => Column(crossAxisAlignment: CrossAxisAlignment.start, children:[Text(badge,style:const TextStyle(color:Color(0xFFA5B4FC),fontSize:9,fontWeight:FontWeight.w900,letterSpacing:1.5)),const SizedBox(height:5),Text(title,style:const TextStyle(fontSize:22,fontWeight:FontWeight.w800))]);
 
-  Widget _folderStrip(bool desktop) => SizedBox(height: desktop ? 118 : 104, child: ListView.separated(scrollDirection:Axis.horizontal,itemCount:folders.length,separatorBuilder:(_,__)=>const SizedBox(width:10),itemBuilder:(_,i){final folder=folders[i];final active=_selectedFolder==folder;final count=folder=='All Videos'?videos.length:videos.where((v)=>v.folder==folder).length;return GestureDetector(onTap:(){setState(()=>_selectedFolder=folder);_loadAll(showLoader:false);},child:AnimatedContainer(duration:const Duration(milliseconds:180),width:desktop?178:145,padding:const EdgeInsets.all(14),decoration:BoxDecoration(borderRadius:BorderRadius.circular(17),gradient:LinearGradient(colors:active?const[Color(0x5534D399),Color(0x332563EB)]:const[Color(0xFF171725),Color(0xFF0F1018)]),border:Border.all(color:active?const Color(0xAA8B5CF6):Colors.white.withOpacity(.10))),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('📁',style:TextStyle(fontSize:27)),const Spacer(),Text(folder,maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w800,fontSize:12)),const SizedBox(height:3),Text('$count videos',style:const TextStyle(color:Color(0xFF737B9E),fontSize:9))])));});
+  Widget _folderStrip(bool desktop) {
+    return SizedBox(
+      height: desktop ? 118 : 104,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: folders.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (_, i) {
+          final folder = folders[i];
+          final active = _selectedFolder == folder;
+          final count = folder == 'All Videos'
+              ? videos.length
+              : videos.where((v) => v.folder == folder).length;
+
+          return GestureDetector(
+            onTap: () {
+              setState(() => _selectedFolder = folder);
+              _loadAll(showLoader: false);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: desktop ? 178 : 145,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(17),
+                gradient: LinearGradient(
+                  colors: active
+                      ? const [Color(0x5534D399), Color(0x332563EB)]
+                      : const [Color(0xFF171725), Color(0xFF0F1018)],
+                ),
+                border: Border.all(
+                  color: active
+                      ? const Color(0xAA8B5CF6)
+                      : Colors.white.withOpacity(.10),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('📁', style: TextStyle(fontSize: 27)),
+                  const Spacer(),
+                  Text(
+                    folder,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '$count videos',
+                    style: const TextStyle(
+                      color: Color(0xFF737B9E),
+                      fontSize: 9,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   Widget _sortButton() => Container(padding:const EdgeInsets.symmetric(horizontal:10,vertical:8),decoration:BoxDecoration(color:const Color(0x18141422),borderRadius:BorderRadius.circular(10),border:Border.all(color:Colors.white.withOpacity(.10))),child:Row(children:[const Icon(Icons.sort_rounded,size:15),const SizedBox(width:5),Text(_sort,style:const TextStyle(fontSize:10))]));
 
@@ -417,7 +482,7 @@ class _ChikiBonaHomeState extends State<ChikiBonaHome> {
   void _showSnack(String text){if(!mounted)return;ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(text),behavior:SnackBarBehavior.floating));}
 
   String _durationText(double? seconds){if(seconds==null||seconds<=0)return '--:--';final s=seconds.round();final h=s~/3600;final m=(s%3600)~/60;final sec=s%60;return h>0?'$h:${m.toString().padLeft(2,'0')}:${sec.toString().padLeft(2,'0')}':'${m.toString().padLeft(2,'0')}:${sec.toString().padLeft(2,'0')}';}
-  String _sizeText(int? bytes){if(bytes==null)return '—';const units=['B','KB','MB','GB','TB'];double n=bytes;int i=0;while(n>=1024&&i<units.length-1){n/=1024;i++;}return '${n.toStringAsFixed(i==0?0:1)} ${units[i]}';}
+  String _sizeText(int? bytes){if(bytes==null)return '—';const units=['B','KB','MB','GB','TB'];double n=bytes.toDouble();int i=0;while(n>=1024&&i<units.length-1){n/=1024;i++;}return '${n.toStringAsFixed(i==0?0:1)} ${units[i]}';}
 }
 
 class ChikiPlayer extends StatefulWidget {
@@ -436,7 +501,7 @@ class _ChikiPlayerState extends State<ChikiPlayer> {
   void dispose(){_controller.dispose();super.dispose();}
   void _seek(int seconds){final p=_controller.value.position;final d=_controller.value.duration;var target=p+Duration(seconds:seconds);if(target<Duration.zero)target=Duration.zero;if(target>d)target=d;_controller.seekTo(target);}
   @override
-  Widget build(BuildContext context){return Scaffold(backgroundColor:Colors.black,appBar:AppBar(backgroundColor:Colors.black,title:Text(widget.video.title,maxLines:1,overflow:TextOverflow.ellipsis)),body:SafeArea(child:Column(children:[Expanded(child:Center(child:_ready?AspectRatio(aspectRatio:_controller.value.aspectRatio==0?16/9:_controller.value.aspectRatio,child:VideoPlayer(_controller)):const CircularProgressIndicator())),if(_ready)VideoProgressIndicator(_controller,allowScrubbing:true,padding:const EdgeInsets.symmetric(horizontal:12,vertical:8),colors:const VideoProgressColors(playedColor:Color(0xFF8B5CF6),bufferedColor:Color(0x554C1D95),backgroundColor:Color(0xFF25253A))),Padding(padding:const EdgeInsets.fromLTRB(14,6,14,20),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[IconButton(onPressed:()=>_seek(-10),icon:const Icon(Icons.replay_10_rounded)),IconButton(onPressed:()=>setState(()=>_controller.value.isPlaying?_controller.pause():_controller.play()),icon:Icon(_controller.value.isPlaying?Icons.pause_circle_filled_rounded:Icons.play_circle_fill_rounded,size:48)),IconButton(onPressed:()=>_seek(10),icon:const Icon(Icons.forward_10_rounded)),const SizedBox(width:12),IconButton(onPressed:()=>_controller.setVolume(_controller.value.volume>0?0:1),icon:Icon(_controller.value.volume>0?Icons.volume_up_rounded:Icons.volume_off_rounded))]))])));}
+  Widget build(BuildContext context){return Scaffold(backgroundColor:Colors.black,appBar:AppBar(backgroundColor:Colors.black,title:Text(widget.video.title,maxLines:1,overflow:TextOverflow.ellipsis)),body:SafeArea(child:Column(children:[Expanded(child:Center(child:_ready?AspectRatio(aspectRatio:_controller.value.aspectRatio==0?16/9:_controller.value.aspectRatio,child:VideoPlayer(_controller)):const CircularProgressIndicator())),if(_ready)VideoProgressIndicator(_controller,allowScrubbing:true,padding:const EdgeInsets.symmetric(horizontal:12,vertical:8),colors:VideoProgressColors(playedColor:Color(0xFF8B5CF6),bufferedColor:Color(0x554C1D95),backgroundColor:Color(0xFF25253A))),Padding(padding:const EdgeInsets.fromLTRB(14,6,14,20),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[IconButton(onPressed:()=>_seek(-10),icon:const Icon(Icons.replay_10_rounded)),IconButton(onPressed:()=>setState(()=>_controller.value.isPlaying?_controller.pause():_controller.play()),icon:Icon(_controller.value.isPlaying?Icons.pause_circle_filled_rounded:Icons.play_circle_fill_rounded,size:48)),IconButton(onPressed:()=>_seek(10),icon:const Icon(Icons.forward_10_rounded)),const SizedBox(width:12),IconButton(onPressed:()=>_controller.setVolume(_controller.value.volume>0?0:1),icon:Icon(_controller.value.volume>0?Icons.volume_up_rounded:Icons.volume_off_rounded))]))])));}
 }
 
 class _GradientText extends StatelessWidget {
