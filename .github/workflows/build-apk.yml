@@ -11,6 +11,7 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,17 +24,30 @@ jobs:
           cache: true
 
       - name: Create Android platform files
-        run: flutter create --platforms=android --org com.chikibona .
+        run: flutter create --platforms=android --org com.chikibona --project-name chiki_bona .
 
       - name: Enable HTTP API access for the VPS
         run: |
           python3 - <<'PY'
           from pathlib import Path
+
           p = Path('android/app/src/main/AndroidManifest.xml')
           s = p.read_text()
+
           if 'android.permission.INTERNET' not in s:
-              s = s.replace('<manifest xmlns:android="http://schemas.android.com/apk/res/android">', '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n    <uses-permission android:name="android.permission.INTERNET" />')
-          s = s.replace('<application ', '<application android:usesCleartextTraffic="true" ')
+              s = s.replace(
+                  '<manifest xmlns:android="http://schemas.android.com/apk/res/android">',
+                  '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n'
+                  '    <uses-permission android:name="android.permission.INTERNET" />'
+              )
+
+          if 'android:usesCleartextTraffic=' not in s:
+              s = s.replace(
+                  '<application ',
+                  '<application android:usesCleartextTraffic="true" ',
+                  1
+              )
+
           p.write_text(s)
           PY
 
